@@ -1,0 +1,3 @@
+add_executable(pdu_bench_control bench_control.cpp)
+target_link_libraries(pdu_bench_control PRIVATE pdu_control)
+pdu_control_apply_strict_options(pdu_bench_control)

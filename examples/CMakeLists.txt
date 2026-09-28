@@ -1,0 +1,30 @@
+add_executable(pdu_example_branch_control branch_control.cpp)
+target_link_libraries(pdu_example_branch_control PRIVATE pdu_control)
+pdu_control_apply_strict_options(pdu_example_branch_control)
+
+add_executable(pdu_example_stale_permission stale_permission.cpp)
+target_link_libraries(pdu_example_stale_permission PRIVATE pdu_control)
+pdu_control_apply_strict_options(pdu_example_stale_permission)
+
+add_executable(pdu_example_ack_without_effect ack_without_effect.cpp)
+target_link_libraries(pdu_example_ack_without_effect PRIVATE pdu_control)
+pdu_control_apply_strict_options(pdu_example_ack_without_effect)
+
+add_executable(pdu_example_revalidation revalidation.cpp)
+target_link_libraries(pdu_example_revalidation PRIVATE pdu_control)
+pdu_control_apply_strict_options(pdu_example_revalidation)
+
+add_executable(pdu_example_crash_reopen crash_reopen.cpp)
+target_link_libraries(pdu_example_crash_reopen PRIVATE pdu_control)
+pdu_control_apply_strict_options(pdu_example_crash_reopen)
+
+add_test(NAME pdu_example_branch_control
+  COMMAND pdu_example_branch_control "${CMAKE_CURRENT_BINARY_DIR}/example-branch-control")
+add_test(NAME pdu_example_stale_permission
+  COMMAND pdu_example_stale_permission "${CMAKE_CURRENT_BINARY_DIR}/example-stale-permission")
+add_test(NAME pdu_example_ack_without_effect
+  COMMAND pdu_example_ack_without_effect "${CMAKE_CURRENT_BINARY_DIR}/example-ack-without-effect")
+add_test(NAME pdu_example_revalidation
+  COMMAND pdu_example_revalidation "${CMAKE_CURRENT_BINARY_DIR}/example-revalidation")
+add_test(NAME pdu_example_crash_reopen
+  COMMAND pdu_example_crash_reopen "${CMAKE_CURRENT_BINARY_DIR}/example-crash-reopen")
