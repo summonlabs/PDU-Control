@@ -34,7 +34,7 @@ should be shed.
   rollback semantics;
 * one narrow vendor adapter interface.
 
-**This runtime does not own** facility-wide Power Control Plane policy, power
+**This runtime does not own** facility-wide [Power Control Plane](https://github.com/summonlabs/Power-Control-Plane) policy, power
 topology, feed authority, UPS or generator control, power-capacity derivation,
 load-shedding policy, or the energy ledger. It consumes permissions, interlocks,
 and capacity limits from those systems as references, and it never reproduces
