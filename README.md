@@ -1,7 +1,7 @@
 # PDU Control
 
 Vendor-neutral lifecycle and safe control semantics for power distribution units
-and branch circuits, for the Data Center Control Plane.
+and branch circuits.
 
 **The core question.** Given authoritative permission and current evidence, what
 PDU or branch-circuit state transition may be attempted, under which limits and
