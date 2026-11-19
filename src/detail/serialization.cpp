@@ -1749,6 +1749,11 @@ Result<PayloadHeader> decode_payload_header(const std::uint8_t* data, std::size_
 Result<std::vector<std::uint8_t>> encode_state(const ModelState& state, const ModelBounds& bounds) {
   Writer body;
   write_model_state(body, state, bounds);
+  if (!body.refusal().ok()) {
+    // A field was refused and is missing from the encoding. Storing it would
+    // commit a payload that no open can decode.
+    return body.refusal();
+  }
   if (body.size() > store_max_payload_bytes) {
     return Status::failure(StatusCode::store_oversized,
                            "the encoded state is " + std::to_string(body.size()) +

@@ -416,3 +416,51 @@ PDU_TEST(persistence, repeated_open_and_close_is_stable) {
   const auto bytes = read_all(store);
   PDU_CHECK_EQ(bytes.size(), store_file_bytes);
 }
+
+PDU_TEST(persistence, a_mutation_that_cannot_be_published_leaves_no_trace) {
+  pdu_test::TempDir directory("persistence-unpublished");
+  const std::string store = directory.store_path();
+  // The configured label bound is larger than the 160 bytes the store format
+  // carries, so a longer label is a valid request that cannot be published.
+  EngineOptions options = pdu_test::base_options();
+  options.bounds.max_label_bytes = 4096;
+  const auto definition = [](const char* id, std::size_t label_bytes) {
+    PduDefinition pdu;
+    pdu.id = PduId::parse(id).value();
+    pdu.generation = PduGeneration::from(1);
+    pdu.lifecycle = LifecycleState::active;
+    pdu.label = std::string(label_bytes, 'x');
+    pdu.registered_at = LogicalTick::from(1);
+    return pdu;
+  };
+  {
+    auto opened = PduControlEngine::open(store, OpenMode::create_new, options);
+    PDU_REQUIRE_STATUS(opened, StatusCode::ok);
+    PduControlEngine& engine = opened.value();
+    PDU_REQUIRE_STATUS(engine.adopt_authority_epoch(AuthorityEpoch::from(1)), StatusCode::ok);
+    PDU_REQUIRE_STATUS(engine.register_pdu(definition("pdu-a", 100)), StatusCode::ok);
+    const Digest64 committed = engine.state_digest();
+    const StoreGeneration generation = engine.store_generation();
+
+    // The publication is refused. It used to report success and commit a
+    // payload without the label, which no later open could decode.
+    const Status refused = engine.register_pdu(definition("pdu-b", 1000));
+    PDU_CHECK_EQ(refused.code(), StatusCode::store_oversized);
+    // The refused registration is not in the engine: it answers from the state
+    // it committed, not from the one it could not publish.
+    PDU_CHECK_EQ(engine.status().pdu_count, std::size_t{1});
+    PDU_CHECK_EQ(engine.state_digest(), committed);
+    PDU_CHECK_EQ(engine.store_generation(), generation);
+    // The engine is still usable: a mutation that fits is published.
+    PDU_CHECK_EQ(engine.advance_tick(LogicalTick::from(7)).code(), StatusCode::ok);
+    PDU_CHECK_EQ(engine.close().code(), StatusCode::ok);
+  }
+  auto reopened = PduControlEngine::open(store, OpenMode::open_existing, options);
+  PDU_REQUIRE_STATUS(reopened, StatusCode::ok);
+  if (!reopened.ok()) {
+    return;
+  }
+  PDU_CHECK_EQ(reopened.value().status().pdu_count, std::size_t{1});
+  PDU_CHECK_EQ(reopened.value().current_tick(), LogicalTick::from(7));
+  PDU_REQUIRE_STATUS(reopened.value().close(), StatusCode::ok);
+}

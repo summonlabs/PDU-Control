@@ -455,6 +455,16 @@ struct PduControlEngine::Impl {
     const Status status = store->publish(model);
     if (status.ok()) {
       model.generation = store->head().generation;
+    } else {
+      // Nothing was committed, so the edit that was about to be published must
+      // not stay in the working model: the caller is told the mutation failed,
+      // and an engine that kept the edit would answer from uncommitted state
+      // and carry it into every later publication. The store still holds the
+      // state it last committed. The store stamps its own incarnation into the
+      // copy it keeps; the working model keeps the value it had.
+      const auto last_incarnation = model.last_incarnation;
+      model = store->state();
+      model.last_incarnation = last_incarnation;
     }
     return status;
   }

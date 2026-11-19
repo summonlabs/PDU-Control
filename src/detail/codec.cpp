@@ -85,13 +85,13 @@ void Writer::raw(const void* data, std::size_t size) {
 
 Status Writer::text(std::string_view value, std::size_t max_bytes) {
   if (value.size() > max_bytes) {
-    return Status::failure(StatusCode::store_oversized,
-                           oversized_message("text length", value.size(), max_bytes));
+    return refuse(Status::failure(StatusCode::store_oversized,
+                                  oversized_message("text length", value.size(), max_bytes)));
   }
   if (value.size() > kU32Limit) {
-    return Status::failure(
+    return refuse(Status::failure(
         StatusCode::store_oversized,
-        oversized_message("text length", value.size(), kU32Limit));
+        oversized_message("text length", value.size(), kU32Limit)));
   }
   // The bound held, so nothing is written until the framing is known to fit.
   u32(static_cast<std::uint32_t>(value.size()));
@@ -101,12 +101,12 @@ Status Writer::text(std::string_view value, std::size_t max_bytes) {
 
 Status Writer::count(std::size_t value, std::size_t max_value) {
   if (value > max_value) {
-    return Status::failure(StatusCode::store_oversized,
-                           oversized_message("collection count", value, max_value));
+    return refuse(Status::failure(StatusCode::store_oversized,
+                                  oversized_message("collection count", value, max_value)));
   }
   if (value > kU32Limit) {
-    return Status::failure(StatusCode::overflow,
-                           oversized_message("collection count", value, kU32Limit));
+    return refuse(Status::failure(StatusCode::overflow,
+                                  oversized_message("collection count", value, kU32Limit)));
   }
   u32(static_cast<std::uint32_t>(value));
   return Status::success();

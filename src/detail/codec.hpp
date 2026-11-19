@@ -36,12 +36,28 @@ class Writer {
   /// `store_oversized`.
   Status count(std::size_t value, std::size_t max_value);
 
+  /// The first refusal of `text` or `count`, or success. A refused field is
+  /// not written at all, so an encoding that saw a refusal is incomplete and
+  /// must not be stored: whoever finishes an encoding checks this.
+  [[nodiscard]] const Status& refusal() const noexcept { return refusal_; }
+
   [[nodiscard]] const std::vector<std::uint8_t>& bytes() const noexcept { return bytes_; }
   [[nodiscard]] std::size_t size() const noexcept { return bytes_.size(); }
-  void clear() noexcept { bytes_.clear(); }
+  void clear() noexcept {
+    bytes_.clear();
+    refusal_ = Status::success();
+  }
 
  private:
+  Status refuse(Status status) {
+    if (refusal_.ok()) {
+      refusal_ = status;
+    }
+    return status;
+  }
+
   std::vector<std::uint8_t> bytes_;
+  Status refusal_ = Status::success();
 };
 
 class Reader {
